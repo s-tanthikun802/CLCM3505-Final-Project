@@ -182,7 +182,7 @@ class ClaudePlayer(Player):
         val = None
         while not valid_square:
             game_state = ("The current game board is '{}'. What should be the next move for '{}'? "
-                          "Here is a important rule for game is answer only 1-9 digits. Only one digit is allowed."
+                          "Here is a important rule for game is answer only 1-9 digits! Only one digit is allowed!!"
                           "Here is example <example>1</example>").format(''.join(game.board), self.letter)
             message = self.client.messages.create(
                 model="claude-3-haiku-20240307",
@@ -202,7 +202,7 @@ class ClaudePlayer(Player):
             except ValueError:
                 print('Claude: Invalid square. Try again.')
                 print('Waiting for Claude rate limit to reset...')
-                time.sleep(10)
+                time.sleep(20)
         return val
 
 
