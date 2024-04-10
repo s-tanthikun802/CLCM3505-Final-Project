@@ -1,13 +1,9 @@
 import os
-import random
 import time
 
 import google.generativeai as genai
-from IPython.display import display
 from IPython.display import Markdown
 import textwrap
-
-from google.generativeai import ChatSession
 
 
 def to_markdown(text):
