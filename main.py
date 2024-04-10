@@ -76,6 +76,9 @@ def play(game, x_player, o_player, print_game=True):
             square = o_player.get_move(game)
         else:
             square = x_player.get_move(game)
+        if square == 'loss':
+            print(f"{o_player.name if letter == 'X' else x_player.name} wins!")
+            return
         # let's define a function to make a move!
         if game.make_move(square, letter):
             if print_game:
@@ -176,6 +179,8 @@ class ClaudePlayer(Player):
     def __init__(self, letter, client):
         super().__init__(letter, 'Claude')
         self.client = client
+        self.last_move = None
+        self.same_move_count = 0
 
     def get_move(self, game):
         valid_square = False
@@ -199,6 +204,16 @@ class ClaudePlayer(Player):
                 if val not in game.available_moves():
                     raise ValueError
                 valid_square = True
+                # Check if the move is the same as the last move
+                if self.last_move == val:
+                    self.same_move_count += 1
+                else:
+                    self.same_move_count = 0
+                self.last_move = val
+                # If the same move is made 3 times, Claude loses
+                if self.same_move_count == 3:
+                    print('Claude made the same move 3 times. Claude loses.')
+                    return 'loss'
             except ValueError:
                 print('Claude: Invalid square. Try again.')
                 print('Waiting for Claude rate limit to reset...')
