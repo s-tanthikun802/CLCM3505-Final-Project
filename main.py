@@ -2,14 +2,8 @@ import os
 import time
 
 import google.generativeai as genai
-from IPython.display import Markdown
 import textwrap
 import anthropic
-
-
-def to_markdown(text):
-    text = text.replace('•', '  *')
-    return Markdown(textwrap.indent(text, '> ', predicate=lambda _: True))
 
 
 class TicTacToe:
