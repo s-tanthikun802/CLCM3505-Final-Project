@@ -1,6 +1,6 @@
 # CLCM3505 Final Project
 
-A brief description of what this project does and who it's for.
+This project is a Tic Tac Toe game that utilizes two AI players, Gemini and Claude. The game is developed in Python and uses the Gemini and Claude AI models to make moves in the game. The Gemini AI communicates via chat, while the Claude AI uses a generative model to decide its moves. The game is designed to demonstrate the capabilities of these AI models in a simple and interactive way.
 
 ## Installation
 
