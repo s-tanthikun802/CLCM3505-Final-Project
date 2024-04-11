@@ -54,6 +54,58 @@ class TicTacToe:
         return False
 
 
+class TicTacToe3D:
+    def __init__(self):
+        self.board = [[[ ' ' for _ in range(3)] for _ in range(3)] for _ in range(3)]
+        self.current_winner = None
+
+    def print_board(self):
+        for i in range(3):
+            for j in range(3):
+                print('|'.join(self.board[i][j]))
+                if j < 2:
+                    print('-+-+-')
+            print('\n')
+
+    def available_moves(self):
+        return [(i, j, k) for i in range(3) for j in range(3) for k in range(3) if self.board[i][j][k] == ' ']
+
+    def empty_squares(self):
+        return any(' ' in sublist for layer in self.board for sublist in layer)
+
+    def make_move(self, square, letter):
+        if self.board[square[0]][square[1]][square[2]] == ' ':
+            self.board[square[0]][square[1]][square[2]] = letter
+            if self.winner(square, letter):
+                self.current_winner = letter
+            return True
+        return False
+
+    def winner(self, square, letter):
+        # check the row
+        row = self.board[square[0]][square[1]]
+        if all([spot == letter for spot in row]):
+            return True
+        # check the column
+        column = [self.board[square[0]][i][square[2]] for i in range(3)]
+        if all([spot == letter for spot in column]):
+            return True
+        # check the depth
+        depth = [self.board[i][square[1]][square[2]] for i in range(3)]
+        if all([spot == letter for spot in depth]):
+            return True
+        # check the diagonals
+        if square[0] == square[1] == square[2]:
+            diagonal1 = [self.board[i][i][i] for i in range(3)]  # left to right diagonal
+            if all([spot == letter for spot in diagonal1]):
+                return True
+            diagonal2 = [self.board[2 - i][i][i] for i in range(3)]  # right to left diagonal
+            if all([spot == letter for spot in diagonal2]):
+                return True
+        # if all of these fail
+        return False
+
+
 def play(game, x_player, o_player, print_game=True):
     # Print player names and their letters
     print(f"{x_player.name} is '{x_player.letter}'")
@@ -76,7 +128,7 @@ def play(game, x_player, o_player, print_game=True):
         # let's define a function to make a move!
         if game.make_move(square, letter):
             if print_game:
-                print(letter + ' makes a move to square {}'.format(square + 1))  # Add 1 here
+                print(letter + ' makes a move to square {}'.format(str(square)))
                 game.print_board()
                 print('')  # just empty line
 
@@ -98,7 +150,7 @@ def play(game, x_player, o_player, print_game=True):
             letter = 'O' if letter == 'X' else 'X'  # switches player
 
         # tiny break to make things a little easier to read
-        time.sleep(0.8)
+        time.sleep(2)
 
     if print_game:
         print('It\'s a tie!')
@@ -123,50 +175,40 @@ class Player:
         valid_square = False
         val = None
         while not valid_square:
-            square = input(self.letter + '\'s turn. Input move (1-9): ')
+            square = input(self.letter + '\'s turn. Input move (1-27): ')
             try:
                 val = int(square) - 1  # Subtract 1 here
-                if val not in game.available_moves():
+                move = (val // 9, (val % 9) // 3, val % 3)
+                if move not in game.available_moves():
                     raise ValueError
                 valid_square = True
             except ValueError:
                 print('Invalid square. Try again.')
-        return val
+        return move
 
 
 class GeminiPlayer(Player):
     def __init__(self, letter, chat):
         super().__init__(letter, 'Gemini')
         self.chat = chat
-        message = "We're going to play Tic Tac Toe. You're '{}'. I'll tell you the position I put on the " \
-                  "board. Please reply with your move as a digit from 1-9 only.".format(letter)
+        message = "We're going to play 3D Tic Tac Toe. You're '{}'. I'll tell you the position I put on the " \
+                  "board. Please reply with your move as a digit from 1-27 only.".format(letter)
         self.chat.send_message(message)
 
     def get_move(self, game):
         valid_square = False
         val = None
-        invalid_square = False
         while not valid_square:
-            board_state = '\n'.join(['|'.join(game.board[i * 3:(i + 1) * 3]) for i in range(3)])
-            # Concatenate the board state and the message
-            if invalid_square:
-                message = (f"Invalid square. Try again.\n\nCurrent board state:\n{board_state}\n\n{self.letter}'s turn."
-                           f" Please answer with a digit from 1-9 only.")
-            else:
-                message = (f"Current board state:\n{board_state}\n\n{self.letter}'s turn. Please answer with a digit "
-                           f"from 1-9 only.")
-            response = self.chat.send_message(message)
-            square = response.text
-            print(f"Gemini response: {square}")
+            square = self.chat.send_message(f"{self.letter}'s turn. Input move (1-27): ").text
             try:
                 val = int(square) - 1  # Subtract 1 here
-                if val not in game.available_moves():
+                move = (val // 9, (val % 9) // 3, val % 3)
+                if move not in game.available_moves():
                     raise ValueError
                 valid_square = True
             except ValueError:
                 print('Gemini: Invalid square. Try again.')
-                invalid_square = True
-        return val
+        return move
 
 
 class ClaudePlayer(Player):
@@ -181,11 +223,13 @@ class ClaudePlayer(Player):
         val = None
         while not valid_square:
             game_state = ("The current game board is '{}'. What should be the next move for '{}'? "
-                          "Here is a important rule for game is answer only 1-9 digits! Only one digit is allowed!!"
-                          "Here is example <example>1</example>").format(''.join(game.board), self.letter)
+                          "Here is a important rule for game is answer only 1-27 digits! Only one digit is allowed!!"
+                          "If you answer that not in the range of 1-27, I don't understand."
+                          "Here is example <example>1</example>").format(
+                ''.join(str(item) for sublist in game.board for item in sublist), self.letter)
             message = self.client.messages.create(
                 model="claude-3-haiku-20240307",
-                system="You're the player of Tic Tac Toe game.",
+                system="You're the player of 3D Tic Tac Toe game.",
                 max_tokens=1024,
                 messages=[
                     {"role": "user", "content": game_state}
@@ -195,7 +239,8 @@ class ClaudePlayer(Player):
             square = message.content[0].text
             try:
                 val = int(square) - 1  # Subtract 1 here
-                if val not in game.available_moves():
+                move = (val // 9, (val % 9) // 3, val % 3)
+                if move not in game.available_moves():
                     raise ValueError
                 valid_square = True
                 # Check if the move is the same as the last move
@@ -212,7 +257,7 @@ class ClaudePlayer(Player):
                 print('Claude: Invalid square. Try again.')
                 print('Waiting for Claude rate limit to reset...')
                 time.sleep(20)
-        return val
+        return move
 
 
 if __name__ == '__main__':
@@ -228,5 +273,5 @@ if __name__ == '__main__':
 
     x_player = ClaudePlayer('X', client)
     o_player = GeminiPlayer('O', chat)
-    game = TicTacToe()
+    game = TicTacToe3D()
     play(game, x_player, o_player, print_game=True)
