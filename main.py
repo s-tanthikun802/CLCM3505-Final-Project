@@ -98,7 +98,7 @@ def play(game, x_player, o_player, print_game=True):
             letter = 'O' if letter == 'X' else 'X'  # switches player
 
         # tiny break to make things a little easier to read
-        time.sleep(2)
+        time.sleep(3)
 
     if print_game:
         print('It\'s a tie!')
@@ -148,13 +148,14 @@ class GeminiPlayer(Player):
         invalid_square = False
         while not valid_square:
             board_state = '\n'.join(['|'.join(game.board[i * 3:(i + 1) * 3]) for i in range(3)])
+            available_moves = ', '.join(str(move+1) for move in game.available_moves())
             # Concatenate the board state and the message
             if invalid_square:
                 message = (f"Invalid square. Try again.\n\nCurrent board state:\n{board_state}\n\n{self.letter}'s turn."
-                           f" Please answer with a digit from 1-9 only.")
+                           f" The available moves are {available_moves}. Please answer with a digit from 1-9 only.")
             else:
-                message = (f"Current board state:\n{board_state}\n\n{self.letter}'s turn. Please answer with a digit "
-                           f"from 1-9 only.")
+                message = (f"Current board state:\n{board_state}\n\n{self.letter}'s turn. The available moves are {available_moves}."
+                           f" Please answer with a digit from 1-9 only.")
             response = self.chat.send_message(message)
             square = response.text
             print(f"Gemini response: {square}")
@@ -180,9 +181,11 @@ class ClaudePlayer(Player):
         valid_square = False
         val = None
         while not valid_square:
+            available_moves = ', '.join(str(move+1) for move in game.available_moves())
             game_state = ("The current game board is '{}'. What should be the next move for '{}'? "
+                          "The available moves are {}. "
                           "Here is a important rule for game is answer only 1-9 digits! Only one digit is allowed!!"
-                          "Here is example <example>1</example>").format(''.join(game.board), self.letter)
+                          "Here is example <example>1</example>").format(''.join(game.board), self.letter, available_moves)
             message = self.client.messages.create(
                 model="claude-3-haiku-20240307",
                 system="You're the player of Tic Tac Toe game.",
