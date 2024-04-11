@@ -98,7 +98,7 @@ def play(game, x_player, o_player, print_game=True):
             letter = 'O' if letter == 'X' else 'X'  # switches player
 
         # tiny break to make things a little easier to read
-        time.sleep(0.8)
+        time.sleep(2)
 
     if print_game:
         print('It\'s a tie!')
